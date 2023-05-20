@@ -1,0 +1,2 @@
+(fun (fun fun1) (+ 3 fun1))
+(myadd 2)

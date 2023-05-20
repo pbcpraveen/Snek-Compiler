@@ -1,0 +1,12 @@
+(fun (emptyfun)
+  (let
+    ((a 32))
+    ( block
+        (print a)
+        (print (+ a 100))
+        (set! a (+ 100 a))
+        (print (= a 132))
+    )
+  )
+)
+(emptyfun)

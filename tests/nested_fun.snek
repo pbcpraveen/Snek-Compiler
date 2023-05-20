@@ -1,0 +1,7 @@
+(fun (func2 a b)
+    b
+)
+(fun (func1 a b)
+    (func2 a b)
+)
+(func1 1 2)
