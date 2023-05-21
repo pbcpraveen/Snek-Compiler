@@ -5,12 +5,14 @@ pub const MIN : i64 = -i64::pow(2, 62);
 pub const MAX : i64 = i64::pow(2, 62) - 1;
 pub const KEYWORDS : &'static [&'static str] = &["add1", "sub1", "isnum", "isbool", "let", "set!",
                                             "block", "print", "set!", "fun", "if", "break", "true",
-                                            "false", "loop"];
+                                            "false", "loop", "tuple"];
 pub const VALUE_1 : i64 = 2;
-pub const TRUE : i64 = 3;
-pub const FALSE : i64 = 1;
+pub const TRUE : i64 = 7;
+pub const FALSE : i64 = 3;
 pub const ERROR_INVALID_ARGUMENT : i64 = 1;
 pub const ERROR_OVERFLOW : i64 = 2;
+pub const ERROR_INDEX_OUT_OF_BOUNDS : i64 = 3;
+pub const ERROR_NOT_AN_ARRAY : i64 = 4;
 
 pub const ROUTINE_PRINT : &str = "snek_print";
 pub const ROUTINE_ERROR : &str = "throw_error";
@@ -47,12 +49,15 @@ pub enum Reg {
     RDI,
     RCX,
     RDX,
+    R15,
 }
 
 #[derive(Clone,Copy,Debug)]
 pub enum Loc {
     LReg(Reg),
-    LStack(i64)
+    LStack(i64),
+    LHeap(i64),
+    LAddr(Reg),
 }
 
 
@@ -61,6 +66,8 @@ pub enum Val {
     VReg(Reg),
     VStack(i64),
     VImm(i64),
+    VHeap(i64),
+    VAddr(Reg),
 }
 
 
@@ -134,4 +141,8 @@ pub enum Expr {
     Break(Box<Expr>),
     Set(String, Box<Expr>),
     Call(String, Vec<Expr>),
+    Array(Vec<Expr>),
+    GetIndex(Box<Expr>, Box<Expr>),
+    //SetIndex(Box<Expr>, Box<Expr>, Box<Expr>),
+    // Append(Box<Expr>, Box<Expr>),
 }

@@ -3,6 +3,29 @@ mod infra;
 // Your tests go here!
 success_tests! {
     {
+        name: egg_eater_print_array,
+        file: "print_array.snek",
+        expected: "[Array: [Array: 1, 2], [Array: 1], [Array: 1, 2, [Array: 1, 2]]]\n[Array: [Array: 1, 2], [Array: 1], [Array: 1, 2, [Array: 1, 2]]]",
+    },
+     {
+        name: egg_eater_get_index_1,
+        file: "get_index_value.snek",
+         input: "0",
+        expected: "3\n3",
+    },
+    {
+        name: egg_eater_get_index_2,
+        file: "get_index_value.snek",
+         input: "2",
+        expected: "[Array: 77, 88]\n[Array: 77, 88]",
+    },
+    {
+        name: egg_eater_get_nested_index_2,
+        file: "nested_index.snek",
+         input: "2",
+        expected: "77\n77",
+    },
+    {
         name: cobra_false_val,
         file: "cobra_false_val.snek",
         expected: "false",
@@ -368,6 +391,18 @@ runtime_error_tests! {
         name: cobra_test_invalid_argument_sub1,
         file: "cobra_test_invalid_argument_sub1.snek",
         expected: "invalid argument",
+    },
+    {
+        name: egg_eater_index_out_of_bounds,
+        file: "get_index_value.snek",
+        input: "3",
+        expected: "invalid",
+    },
+    {
+        name: egg_eater_index_not_an_array,
+        file: "nested_index.snek",
+        input: "1",
+        expected: "invalid",
     },
 
 }

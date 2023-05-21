@@ -79,20 +79,51 @@ fn loc_to_str(l: &Loc) -> String {
                 format!("qword [rsp + {}]", -1 * offset)
             }
         },
+        Loc::LHeap(o) => {
+            let offset = o * OFFSET_SCALE;
+            format!("qword [r15 + {}]", offset)
+        },
+        Loc::LAddr(a) => format!("qword [{}]", reg_to_str(a)),
     }
 }
 pub fn mov_target(dest : &Loc, source : &Val) -> Vec<Instr> {
   let mut instrs = Vec::new();
   match (dest, source) {
-      (Loc::LStack(n), Val::VStack(_m)) => {
+      (Loc::LStack(n), Val::VStack(_m)) | (Loc::LStack(n), Val::VHeap(_m)) => {
           instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
           instrs.push(Instr::IMov(Loc::LStack(*n), Val::VReg(Reg::RDX)));
+        },
+      (Loc::LStack(n), Val::VAddr(_m)) => {
+          instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
+          instrs.push(Instr::IMov(Loc::LStack(*n), Val::VReg(Reg::RDX)));
+        },
+      (Loc::LHeap(n), Val::VHeap(_m)) | (Loc::LHeap(n), Val::VStack(_m)) => {
+          instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
+          instrs.push(Instr::IMov(Loc::LHeap(*n), Val::VReg(Reg::RDX)));
+        },
+      (Loc::LHeap(n), Val::VAddr(_m)) => {
+          instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
+          instrs.push(Instr::IMov(Loc::LHeap(*n), Val::VReg(Reg::RDX)));
+        },
+      (Loc::LAddr(r1), Val::VStack(_m)) | (Loc::LAddr(r1), Val::VHeap(_m))  => {
+          instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
+          instrs.push(Instr::IMov(Loc::LAddr(*r1), Val::VReg(Reg::RDX)));
+        },
+      (Loc::LAddr(r1), Val::VAddr(_m)) => {
+          instrs.push(Instr::IMov(Loc::LReg(Reg::RDX), source.clone()));
+          instrs.push(Instr::IMov(Loc::LAddr(*r1), Val::VReg(Reg::RDX)));
         },
       (Loc::LReg(r1), _) => {
           instrs.push(Instr::IMov(Loc::LReg(*r1), source.clone()));
         },
       (Loc::LStack(n), _) => {
           instrs.push(Instr::IMov(Loc::LStack(*n), source.clone()));
+        },
+      (Loc::LHeap(n), _) => {
+          instrs.push(Instr::IMov(Loc::LHeap(*n), source.clone()));
+        },
+      (Loc::LAddr(r1), _) => {
+          instrs.push(Instr::IMov(Loc::LAddr(*r1), source.clone()));
         },
   }
   instrs
@@ -110,6 +141,13 @@ fn val_to_str(v: &Val) -> String {
                 format!("qword [rsp + {}]", -1 * offset)
             }
         },
+        Val::VHeap(o) => {
+            let offset = o * OFFSET_SCALE;
+            format!("qword [r15 + {}]", offset)
+        },
+        Val::VAddr(l) => {
+            format!("qword [{}]", reg_to_str(l))
+        }
     }
 }
 
@@ -121,6 +159,7 @@ fn reg_to_str(r: &Reg) -> String {
         Reg::RDI => "rdi".to_string(),
         Reg::RCX => "rcx".to_string(),
         Reg::RDX => "rdx".to_string(),
+        Reg::R15 => "r15".to_string(),
     }
 }
 pub fn is_def(s: &Sexp) -> bool {

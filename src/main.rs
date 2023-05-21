@@ -1,17 +1,11 @@
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-
 use sexp::*;
-
 
 use snek::utils::*;
 use snek::parser::*;
 use snek::compiler::*;
-
-
-
-
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -23,7 +17,7 @@ fn main() -> std::io::Result<()> {
     let mut in_contents = String::new();
     in_file.read_to_string(&mut in_contents)?;
     let prog = "(".to_owned() + &in_contents + ")";
-    // You will make result hold the result of actually compiling
+
     let sexp = match parse(&prog) {
       Ok(sexp) => sexp,
       Err(e) => panic!("Invalid: {}", e),
@@ -51,6 +45,7 @@ throw_error:
   call snek_error
   ret
 our_code_starts_here:
+mov r15, rsi
 {}
 ",
         result

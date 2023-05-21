@@ -112,6 +112,12 @@ fn compile_to_instrs(expression: &Expr, context: &Context, label_count: &mut i32
         Expr::Call(id, args) => {
             compile_function_call_instruction(id, args, context, label_count)
         },
+        Expr::Array(exprs) => {
+            compile_array_instruction(exprs, context, label_count)
+        },
+        Expr::GetIndex(id, e) => {
+            compile_get_index_instruction(id, e, context, label_count)
+        },
     }
 }
 
@@ -148,6 +154,12 @@ fn compile_identifier(id: &String, c: &Context) -> Vec<Instr> {
                     Loc::LStack(offset) => {
                         mov_target(&c.target, &Val::VStack(*offset))
                     },
+                    Loc::LHeap(offset) => {
+                        mov_target(&c.target, &Val::VHeap(*offset))
+                    },
+                    Loc::LAddr(addr) => {
+                        mov_target(&c.target, &Val::VAddr(*addr))
+                    }
                 }
         } else {
                 panic!("Invalid : Unbound variable identifier {}", id);
@@ -373,6 +385,12 @@ fn compile_set_instruction(id: &str, expression: &Expr, context: &Context, label
             Loc::LReg(reg) => {
                 instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VReg(*reg)));
             }
+            Loc::LHeap(offset) => {
+                instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VHeap(*offset)));
+            },
+            Loc::LAddr(reg) => {
+                instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VAddr(*reg)));
+            }
         }
     } else {
         panic!("Invalid : Unbound variable identifier {}", id);
@@ -480,5 +498,73 @@ fn compile_function_call_instruction(id: &String,
         panic!("Invalid insufficient number of arguments passed to the function {}-> expected {} but got {}.",
                id, required_args_count, args.len());
     }
+}
+
+fn compile_array_instruction(exprs: &Vec<Expr>, context: &Context, label_count: &mut i32) -> Vec<Instr> {
+    // the first element of the array is the size of the array
+    // the rest of the elements are the elements of the array
+
+    let mut instrs = vec![];
+    let mut heap_index = 0;
+
+    let mut stack_offset = context.si;
+    for expr in exprs {
+        let expr_instrs = compile_to_instrs(expr,
+                                                &Context {
+                                                    target: Loc::LStack(stack_offset),
+                                                    si: stack_offset,
+                                                    ..*context
+                                                },
+                                                label_count);
+        stack_offset += 1;
+        instrs.extend(expr_instrs);
+    }
+    let size = exprs.len() as i64;
+    instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(size << 1)));
+    instrs.extend(mov_target(&Loc::LHeap(heap_index), &Val::VReg(Reg::RAX)));
+    heap_index += 1;
+    for offset in context.si..stack_offset {
+        instrs.extend(mov_target(&Loc::LHeap(heap_index), &Val::VStack(offset)));
+        heap_index += 1;
+    }
+
+    let heap_offset = heap_index * OFFSET_SCALE;
+    instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VReg(Reg::R15)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::R15), Val::VImm(heap_offset)));
+
+    return instrs;
+}
+fn compile_get_index_instruction(array: &Box<Expr>,
+                                  index: &Box<Expr>,
+                                  context: &Context,
+                                  label_count: &mut i32) -> Vec<Instr> {
+    let mut instrs = vec![];
+    let array_instrs = compile_to_instrs(array, &Context {target: Loc::LReg(Reg::RAX), ..*context}, label_count);
+    let index_instrs = compile_to_instrs(index, &Context {target: Loc::LReg(Reg::RAX), si: context.si+1, ..*context}, label_count);
+    instrs.extend(array_instrs);
+
+    //checking index out of bound
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
+    instrs.push(Instr::IJne("throw_error".to_string()));
+
+    instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
+    instrs.extend(index_instrs);
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VAddr(Reg::RCX)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INDEX_OUT_OF_BOUNDS)));
+    instrs.push(Instr::IJge("throw_error".to_string()));
+    instrs.push(Instr::ISar(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.push(Instr::IMul(Val::VReg(Reg::RAX), Val::VImm(OFFSET_SCALE)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VReg(Reg::RAX)));
+    instrs.extend(mov_target(&context.target, &Val::VAddr(Reg::RCX)));
+
+    return instrs;
 }
 

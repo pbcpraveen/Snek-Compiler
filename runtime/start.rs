@@ -1,5 +1,5 @@
 use std::env;
-
+use std::convert::TryInto;
 
 const MIN : i64 = -i64::pow(2, 62);
 const MAX : i64 = i64::pow(2, 62) - 1;
@@ -9,8 +9,9 @@ extern "C" {
     // it does not add an underscore in front of the name.
     // Courtesy of Max New (https://maxsnew.com/teaching/eecs-483-fa22/hw_adder_assignment.html)
     #[link_name = "\x01our_code_starts_here"]
-    fn our_code_starts_here(input: u64) -> u64;
+    fn our_code_starts_here(input : i64, memory : *mut i64) -> i64;
 }
+
 
 #[export_name = "\x01snek_error"]
 pub extern "C" fn snek_error(errcode: i64) {
@@ -18,16 +19,18 @@ pub extern "C" fn snek_error(errcode: i64) {
     match errcode {
         1 => eprintln!("runtime error: invalid argument to a binary operation"),
         2 => eprintln!("runtime error: invalid - memory overflow during allocation"),
+        3 => eprintln!("runtime error: invalid - index out of bounds"),
+        4 => eprintln!("runtime error: invalid - expected an array to index into"),
         _ => eprintln!("runtime error: invalid - unknown error code {errcode}"),
     }
     std::process::exit(1);
 }
 
-fn parse_input(input: &str) -> u64 {
+fn parse_input(input: &str) -> i64 {
 
     match input {
-        "true" => 3,
-        "false" => 1,
+        "true" => 7,
+        "false" => 3,
         _ => {
             match input.parse::<i64>() {
                 Ok(n) => {
@@ -35,7 +38,7 @@ fn parse_input(input: &str) -> u64 {
                         eprintln!("invalid argument overflow value: {input}");
                         std::process::exit(1);
                     }
-                    (n << 1) as u64
+                    (n << 1) as i64
                 },
                 Err(_) => {
                     eprintln!("invalid argument : {input}");
@@ -48,28 +51,46 @@ fn parse_input(input: &str) -> u64 {
 #[no_mangle]
 #[export_name = "\x01snek_print"]
 fn snek_print(val : i64) -> i64 {
-  if val == 3 { println!("true"); }
-  else if val == 1 { println!("false"); }
-  else if val % 2 == 0 { println!("{}", val >> 1); }
-  else {
-    println!("Invalid : Unknown value: {}", val);
-  }
+  let mut seen = Vec::<i64>::new();
+  println!("{}", snek_str(val, &mut seen));
   return val;
 }
 
-fn print_return_val(val: i64) -> String {
-    match val {
-        1 => "false".to_string(),
-        3 => "true".to_string(),
-        n if n % 2 == 0 => (n >> 1).to_string(),
-        n => panic!("Invalid 63 bit representation: {}", n),
+
+fn snek_str(val : i64, seen : &mut Vec<i64>) -> String {
+
+    if val == 7 { "true".to_string() }
+    else if val == 3 { "false".to_string() }
+    else if val % 2 == 0 { format!("{}", val >> 1) }
+    else if val == 1 { "nil".to_string() }
+    else if val & 1 == 1 {
+        if seen.contains(&val)  { return "[Array <cyclic>]".to_string() }
+        seen.push(val);
+        let addr = (val - 1) as *const i64;
+        let size_array = unsafe{ *addr } >> 1;
+        let mut index = 1;
+        let mut builder = vec![];
+        while index <= size_array {
+            let element = unsafe{ *addr.offset(index.try_into().unwrap()) };
+            let stringified_element = snek_str(element, seen);
+            builder.push(stringified_element);
+            seen.pop();
+            index += 1;
+        }
+        let stringified_array = "[Array: ".to_owned() + &builder.join(", ") + "]";
+        return stringified_array;
+    } else {
+        format!("Unknown value: {}", val)
     }
 }
 fn main() {
     let args: Vec<String> = env::args().collect();
     let input = if args.len() == 2 { &args[1] } else { "false" };
     let input = parse_input(&input);
+    let mut memory = Vec::<i64>::with_capacity(1000000);
+    let buffer :*mut i64 = memory.as_mut_ptr();
 
-    let i: u64 = unsafe { our_code_starts_here(input) };
-    println!("{}", print_return_val(i as i64));
+    let i: i64 = unsafe { our_code_starts_here(input, buffer) };
+    //println!("{}" , unsafe{*((i - 1) as *const i64)} >> 1);
+    snek_print(i as i64);
 }

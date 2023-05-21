@@ -38,6 +38,15 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                 }
                 [Sexp::Atom(S(command)), Sexp::Atom(S(id)), e] if command == "set!" => Expr::Set(id.to_string(), Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), bindings, e] if op == "let" => {Expr::Let(parse_bind(bindings), Box::new(parse_expr(e))) },
+                [Sexp::Atom(S(op)), args@..] if op == "array" => {
+                    let mut args_vec = Vec::new();
+                    for arg in args.iter() {
+                        args_vec.push(parse_expr(arg));
+                    }
+                    Expr::Array(args_vec)
+                },
+                [Sexp::Atom(S(op)), e1, e2] if op == "getIndex" => Expr::GetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
+                //[Sexp::Atom(S(op)), e1, e2, e3] if op == "setIndex" => Expr::SetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2)), Box::new(parse_expr(e3))),
                 [Sexp::Atom(S(id)), args@..] => {
                     let mut args_vec = Vec::new();
                     for arg in args.iter() {
