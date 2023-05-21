@@ -118,6 +118,15 @@ fn compile_to_instrs(expression: &Expr, context: &Context, label_count: &mut i32
         Expr::GetIndex(id, e) => {
             compile_get_index_instruction(id, e, context, label_count)
         },
+        Expr::SetIndex(id, e1, e2) => {
+            compile_set_index_instruction(id, e1, e2, context, label_count)
+        },
+        Expr::Len(id) => {
+            compile_len_instruction(id, context, label_count)
+        },
+        Expr::Append(id, e) => {
+            compile_append_instruction(id, e, context, label_count)
+        },
     }
 }
 
@@ -568,3 +577,108 @@ fn compile_get_index_instruction(array: &Box<Expr>,
     return instrs;
 }
 
+fn compile_set_index_instruction(array: &Box<Expr>,
+                                  index: &Box<Expr>,
+                                  value: &Box<Expr>,
+                                  context: &Context,
+                                  label_count: &mut i32) -> Vec<Instr> {
+    let mut instrs = vec![];
+    let array_instrs = compile_to_instrs(array, &Context { target: Loc::LReg(Reg::RAX), ..*context }, label_count);
+    let index_instrs = compile_to_instrs(index, &Context { target: Loc::LReg(Reg::RAX), si: context.si + 1, ..*context }, label_count);
+    let value_instrs = compile_to_instrs(value, &Context { target: Loc::LReg(Reg::RAX), si: context.si + 2, ..*context }, label_count);
+    instrs.extend(array_instrs);
+
+    //checking index out of bound
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
+    instrs.push(Instr::IJne("throw_error".to_string()));
+
+    instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
+    instrs.extend(index_instrs);
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VAddr(Reg::RCX)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INDEX_OUT_OF_BOUNDS)));
+    instrs.push(Instr::IJge("throw_error".to_string()));
+    instrs.push(Instr::ISar(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.push(Instr::IMul(Val::VReg(Reg::RAX), Val::VImm(OFFSET_SCALE)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VReg(Reg::RAX)));
+    instrs.extend(value_instrs);
+    instrs.extend(mov_target(&Loc::LAddr(Reg::RCX), &Val::VReg(Reg::RAX)));
+    instrs
+}
+
+fn compile_len_instruction(array: &Box<Expr>,
+                           context: &Context,
+                           label_count: &mut i32) -> Vec<Instr> {
+    let mut instrs = vec![];
+    let array_instrs = compile_to_instrs(array, &Context { target: Loc::LReg(Reg::RAX), ..*context }, label_count);
+    instrs.extend(array_instrs);
+
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
+    instrs.push(Instr::IJne("throw_error".to_string()));
+
+    instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.extend(mov_target(&context.target, &Val::VAddr(Reg::RAX)));
+
+    return instrs;
+}
+
+fn compile_append_instruction(array: &Box<Expr>,
+                              value: &Box<Expr>,
+                              context: &Context,
+                              label_count: &mut i32) -> Vec<Instr> {
+    let mut instrs = vec![];
+    let array_instrs = compile_to_instrs(array, &Context { target: Loc::LReg(Reg::RAX), ..*context }, label_count);
+    let value_instrs = compile_to_instrs(value, &Context { target: Loc::LReg(Reg::RAX), si: context.si + 1, ..*context }, label_count);
+    let copy_label_start = new_label(label_count, "copy_start", context.current_function);
+    let copy_label_end = new_label(label_count, "copy_end", context.current_function);
+    instrs.extend(array_instrs);
+
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
+    instrs.push(Instr::IJne("throw_error".to_string()));
+
+    instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
+    instrs.extend(value_instrs);
+    instrs.extend(mov_target(&Loc::LStack(context.si + 1), &Val::VReg(Reg::RAX)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
+    instrs.push(Instr::ISub(Val::VReg(Reg::RCX), Val::VImm(1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VAddr(Reg::RCX)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VReg(Reg::RAX)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VImm(2)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::R15)));
+    instrs.extend(mov_target(&Loc::LAddr(Reg::RBX), &Val::VReg(Reg::RCX)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RBX), Val::VImm(OFFSET_SCALE)));
+
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
+    instrs.push(Instr::ISub(Val::VReg(Reg::RCX), Val::VImm(1)));
+
+
+    instrs.push(Instr::ILabel(copy_label_start.clone()));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VImm(OFFSET_SCALE)));
+    instrs.extend(mov_target(&Loc::LAddr(Reg::RBX), &Val::VAddr(Reg::RCX)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RBX), Val::VImm(OFFSET_SCALE)));
+    instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(2)));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(0)));
+    instrs.push(Instr::IJe(copy_label_end.clone()));
+    instrs.push(Instr::IJmp(copy_label_start.clone()));
+    instrs.push(Instr::ILabel(copy_label_end.clone()));
+
+    instrs.extend(mov_target(&Loc::LAddr(Reg::RBX), &Val::VStack(context.si + 1)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VReg(Reg::R15)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
+    instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+    instrs.extend(mov_target(&Loc::LReg(Reg::R15), &Val::VReg(Reg::RBX)));
+    instrs.push(Instr::IAdd(Val::VReg(Reg::R15), Val::VImm(OFFSET_SCALE)));
+
+    return instrs;
+}

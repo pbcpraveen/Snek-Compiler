@@ -3,6 +3,32 @@ mod infra;
 // Your tests go here!
 success_tests! {
     {
+        name: egg_eater_array_set_value,
+        file: "set_array_index.snek",
+        expected: "[Array: 2, 4, 5]\n[Array: 1, 4, 5]\n[Array: 1, 4, 5]",
+    },
+    {
+        name: egg_eater_recurrsive_array_set_value,
+        file: "recurrsive_array.snek",
+        expected: "[Array: 2, 4, 5]\n[Array: [...], 4, 5]\n[Array: [...], 4, 5]\n[Array: [...], 4, 5]\n[Array: [...], 4, 5]",
+    },
+    {
+        name: egg_eater_deep_recurrsive_array_set_value,
+        file: "deep_cycle_detection.snek",
+        expected: "[Array: 43, 22, [Array: 75, 26, 34, [Array: 12, 34, 56, 78, 90, [Array: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, [...], 13, 14, 15]]]]\n[Array: 43, 22, [Array: 75, 26, 34, [Array: 12, 34, 56, 78, 90, [Array: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, [...], 13, 14, 15]]]]",
+    },
+    {
+        name: egg_eater_length_array,
+        file: "len_array.snek",
+        expected: "3\n3",
+
+    },
+    {
+        name: egg_eater_append_array,
+        file: "append_array.snek",
+        expected: "[Array: 6762, 3279, 25]\n[Array: 6762, 3279, 25, 69]\n[Array: 6762, 3279, 25, 69]",
+   },
+    {
         name: egg_eater_print_array,
         file: "print_array.snek",
         expected: "[Array: [Array: 1, 2], [Array: 1], [Array: 1, 2, [Array: 1, 2]]]\n[Array: [Array: 1, 2], [Array: 1], [Array: 1, 2, [Array: 1, 2]]]",

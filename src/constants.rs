@@ -5,7 +5,8 @@ pub const MIN : i64 = -i64::pow(2, 62);
 pub const MAX : i64 = i64::pow(2, 62) - 1;
 pub const KEYWORDS : &'static [&'static str] = &["add1", "sub1", "isnum", "isbool", "let", "set!",
                                             "block", "print", "set!", "fun", "if", "break", "true",
-                                            "false", "loop", "tuple"];
+                                            "false", "loop", "array", "len", "getIndex", "setIndex",
+                                            "append"];
 pub const VALUE_1 : i64 = 2;
 pub const TRUE : i64 = 7;
 pub const FALSE : i64 = 3;
@@ -143,6 +144,7 @@ pub enum Expr {
     Call(String, Vec<Expr>),
     Array(Vec<Expr>),
     GetIndex(Box<Expr>, Box<Expr>),
-    //SetIndex(Box<Expr>, Box<Expr>, Box<Expr>),
-    // Append(Box<Expr>, Box<Expr>),
+    SetIndex(Box<Expr>, Box<Expr>, Box<Expr>),
+    Append(Box<Expr>, Box<Expr>),
+    Len(Box<Expr>),
 }

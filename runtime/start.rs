@@ -64,7 +64,7 @@ fn snek_str(val : i64, seen : &mut Vec<i64>) -> String {
     else if val % 2 == 0 { format!("{}", val >> 1) }
     else if val == 1 { "nil".to_string() }
     else if val & 1 == 1 {
-        if seen.contains(&val)  { return "[Array <cyclic>]".to_string() }
+        if seen.contains(&val)  { return "[...]".to_string() }
         seen.push(val);
         let addr = (val - 1) as *const i64;
         let size_array = unsafe{ *addr } >> 1;
@@ -74,9 +74,9 @@ fn snek_str(val : i64, seen : &mut Vec<i64>) -> String {
             let element = unsafe{ *addr.offset(index.try_into().unwrap()) };
             let stringified_element = snek_str(element, seen);
             builder.push(stringified_element);
-            seen.pop();
             index += 1;
         }
+        seen.pop();
         let stringified_array = "[Array: ".to_owned() + &builder.join(", ") + "]";
         return stringified_array;
     } else {

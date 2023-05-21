@@ -1,0 +1,6 @@
+(let ((a (array 6762 3279 25)))
+    (block
+    (print a)
+    (set! a (append a 69))
+    (print a)
+    ))

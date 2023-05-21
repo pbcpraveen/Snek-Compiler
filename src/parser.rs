@@ -46,7 +46,9 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                     Expr::Array(args_vec)
                 },
                 [Sexp::Atom(S(op)), e1, e2] if op == "getIndex" => Expr::GetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
-                //[Sexp::Atom(S(op)), e1, e2, e3] if op == "setIndex" => Expr::SetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2)), Box::new(parse_expr(e3))),
+                [Sexp::Atom(S(op)), e1, e2, e3] if op == "setIndex" => Expr::SetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2)), Box::new(parse_expr(e3))),
+                [Sexp::Atom(S(op)), e1] if op == "len" => Expr::Len(Box::new(parse_expr(e1))),
+                [Sexp::Atom(S(op)), e1, e2] if op == "append" => Expr::Append(Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(id)), args@..] => {
                     let mut args_vec = Vec::new();
                     for arg in args.iter() {
