@@ -24,6 +24,66 @@ success_tests! {
 
     },
     {
+        name: egg_eater_empty_array,
+        file: "empty_array.snek",
+        expected: "[Array: ]",
+
+    },
+    {
+        name: egg_eater_isnull_1,
+        file: "is_null.snek",
+        input: "null",
+        expected: "true",
+    },
+    {
+        name: egg_eater_isnull_2,
+        file: "is_null.snek",
+        input: "3",
+        expected: "false",
+    },
+    {
+        name: egg_eater_isnull_3,
+        file: "is_null.snek",
+        input: "true",
+        expected: "false",
+    },
+    {
+        name: egg_eater_boolean_1,
+        file: "boolean_operation.snek",
+        input: "true",
+        expected: "true",
+    },
+    {
+        name: egg_eater_boolean_2,
+        file: "boolean_operation.snek",
+        input: "false",
+        expected: "false",
+    },
+    {
+        name: egg_eater_boolean_3,
+        file: "boolean_or.snek",
+        input: "true",
+        expected: "true",
+    },
+    {
+        name: egg_eater_boolean_4,
+        file: "boolean_or.snek",
+        input: "false",
+        expected: "false",
+    },
+    {
+        name: point_single_append,
+        file: "point_add_append.snek",
+        expected: "4\n[Array: 4]\n[Array: 4]",
+
+    },
+    {
+        name: point_generic_add,
+        file: "points.snek",
+        expected: "[Array: 5, 7]\n[Array: 5, 7]",
+
+    },
+    {
         name: egg_eater_append_array,
         file: "append_array.snek",
         expected: "[Array: 6762, 3279, 25]\n[Array: 6762, 3279, 25, 69]\n[Array: 6762, 3279, 25, 69]",

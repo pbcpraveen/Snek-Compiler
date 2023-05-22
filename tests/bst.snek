@@ -1,0 +1,43 @@
+(fun (is_leaf_node node)
+    (if (&& (isnull (getIndex node 1)) (isnull (getIndex node 2)))
+        true
+        false
+    )
+)
+(fun (check_if_null_and_compare_ge node element)
+    (if (isnull node)
+        false
+        (>= (getIndex node 0) element)
+    )
+)
+(fun (search_tree root element)
+    (if (isnull root)
+        false
+        (if (= (getIndex root 0) element)
+            true
+            (if (is_leaf_node root)
+                false
+                (if (check_if_null_and_compare_ge (getIndex root 1) element)
+                    (search_tree (getIndex root 1) element)
+                    (search_tree (getIndex root 2) element)
+                )
+            )
+        )
+    )
+)
+(let ((a (array 7
+                (array 5
+                        (array 2 null  null)
+                        null
+                )
+                (array 15
+                        (array 9 null null)
+                        (array 20 null null)
+                )
+        )
+     ))
+    (block
+        (print (search_tree a 20))
+        (print (search_tree a 1))
+    )
+)

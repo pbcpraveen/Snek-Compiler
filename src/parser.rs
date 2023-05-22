@@ -13,6 +13,7 @@ pub fn parse_expr(s: &Sexp) -> Expr {
         Sexp::Atom(I(n)) => { Expr::Number(*n)}
         Sexp::Atom(S(boolean)) if boolean == "true" => Expr::Boolean(true),
         Sexp::Atom(S(boolean)) if boolean == "false" => Expr::Boolean(false),
+        Sexp::Atom(S(id)) if id == "null" => { Expr::Null },
         Sexp::Atom(S(id)) => Expr::Id(id.to_string()),
         Sexp::List(vec) => {
             match &vec[..] {
@@ -21,6 +22,7 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                 [Sexp::Atom(S(op)), e] if op == "isnum" => Expr::UnOp(Op1::IsNum, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e] if op == "isbool" => Expr::UnOp(Op1::IsBool, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e] if op == "print" => Expr::UnOp(Op1::Print, Box::new(parse_expr(e))),
+                [Sexp::Atom(S(op)), e] if op == "isnull" => Expr::UnOp(Op1::IsNull, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "+" => Expr::BinOp(Op2::Plus, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "-" => Expr::BinOp(Op2::Minus, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "*" => Expr::BinOp(Op2::Times, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
@@ -29,6 +31,8 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                 [Sexp::Atom(S(op)), e1, e2] if op == "=" => Expr::BinOp(Op2::Equal, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == ">=" => Expr::BinOp(Op2::GreaterEqual, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "<=" => Expr::BinOp(Op2::LessEqual, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
+                [Sexp::Atom(S(op)), e1, e2] if op == "&&" => Expr::BinOp(Op2::And, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
+                [Sexp::Atom(S(op)), e1, e2] if op == "||" => Expr::BinOp(Op2::Or, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(command)), e1, e2, e3] if command == "if" => Expr::If(Box::new(parse_expr(e1)), Box::new(parse_expr(e2)), Box::new(parse_expr(e3))),
                 [Sexp::Atom(S(command)), e] if command == "loop" => Expr::Loop(Box::new(parse_expr(e))),
                 [Sexp::Atom(S(command)), e] if command == "break" => Expr::Break(Box::new(parse_expr(e))),

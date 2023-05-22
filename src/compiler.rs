@@ -79,6 +79,9 @@ fn compile_to_instrs(expression: &Expr, context: &Context, label_count: &mut i32
         Expr::Number(n) => {
             compile_num(n, context)
         },
+        Expr::Null => {
+            compile_null(context)
+        },
         Expr::Boolean(b) => {
             compile_boolean(b, context)
         },
@@ -213,6 +216,11 @@ fn compile_bindings(bindings: &Vec<(String, Expr)>,
     return instrs;
 }
 
+fn compile_null(c: &Context) -> Vec<Instr> {
+    let mut instrs = Vec::new();
+    instrs.extend(mov_target(&c.target, &Val::VImm(NULL)));
+    instrs
+}
 fn compile_unary_operation(op: &Op1,
                            expression: &Box<Expr>,
                            context: &Context,
@@ -263,6 +271,12 @@ fn compile_unary_operation(op: &Op1,
             instrs.push(Instr::ICall(ROUTINE_PRINT.to_string()));
             instrs.push(Instr::IAdd(Val::VReg(Reg::RSP), Val::VImm(offset)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VStack(context.si)))
+        },
+        Op1::IsNull => {
+            instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(NULL)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(FALSE)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
+            instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
         },
     }
     instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
@@ -340,6 +354,40 @@ fn compile_binary_operation(op: &Op2,
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
             instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
         },
+        Op2::And => {
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+             instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INVALID_ARGUMENT)));
+             instrs.push(Instr::IJne(ROUTINE_ERROR.to_string()));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VStack(stack_offset)));
+             instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INVALID_ARGUMENT)));
+             instrs.push(Instr::IJne(ROUTINE_ERROR.to_string()));
+             instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VStack(stack_offset)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(TRUE + TRUE)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(FALSE)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
+             instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
+        }
+        Op2::Or => {
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+             instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INVALID_ARGUMENT)));
+             instrs.push(Instr::IJne(ROUTINE_ERROR.to_string()));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VStack(stack_offset)));
+             instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(3)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INVALID_ARGUMENT)));
+             instrs.push(Instr::IJne(ROUTINE_ERROR.to_string()));
+             instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VStack(stack_offset)));
+             instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(FALSE + FALSE)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(FALSE)));
+             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
+             instrs.push(Instr::ICmovg(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
+        }
         Op2::Greater => {
             instrs.extend(check_dtype_num(&Val::VReg(Reg::RAX), &Val::VStack(stack_offset)));
             let jump_label = new_label(label_count, "greater_than", &context.current_function.clone());
@@ -664,14 +712,15 @@ fn compile_append_instruction(array: &Box<Expr>,
 
 
     instrs.push(Instr::ILabel(copy_label_start.clone()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(0)));
+    instrs.push(Instr::IJe(copy_label_end.clone()));
     instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VImm(OFFSET_SCALE)));
     instrs.extend(mov_target(&Loc::LAddr(Reg::RBX), &Val::VAddr(Reg::RCX)));
     instrs.push(Instr::IAdd(Val::VReg(Reg::RBX), Val::VImm(OFFSET_SCALE)));
     instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(2)));
-    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(0)));
-    instrs.push(Instr::IJe(copy_label_end.clone()));
     instrs.push(Instr::IJmp(copy_label_start.clone()));
     instrs.push(Instr::ILabel(copy_label_end.clone()));
+
 
     instrs.extend(mov_target(&Loc::LAddr(Reg::RBX), &Val::VStack(context.si + 1)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VReg(Reg::R15)));

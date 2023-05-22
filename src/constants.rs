@@ -3,6 +3,7 @@ use im::HashMap;
 pub const OFFSET_SCALE: i64 = 8;
 pub const MIN : i64 = -i64::pow(2, 62);
 pub const MAX : i64 = i64::pow(2, 62) - 1;
+pub const NULL : i64 = 1;
 pub const KEYWORDS : &'static [&'static str] = &["add1", "sub1", "isnum", "isbool", "let", "set!",
                                             "block", "print", "set!", "fun", "if", "break", "true",
                                             "false", "loop", "array", "len", "getIndex", "setIndex",
@@ -93,6 +94,7 @@ pub enum Instr {
     ITest(Val, Val),
     ICmove(Val, Val),
     ICmovne(Val, Val),
+    ICmovg(Val, Val),
     IAnd(Val, Val),
     INot(Val),
     IXor(Val, Val),
@@ -113,6 +115,7 @@ pub enum Op1 {
     IsNum,
     IsBool,
     Print,
+    IsNull,
 }
 
 #[derive(Debug)]
@@ -125,11 +128,14 @@ pub enum Op2 {
     Equal,
     GreaterEqual,
     LessEqual,
+    And,
+    Or,
 }
 
 
 #[derive(Debug)]
 pub enum Expr {
+    Null,
     Number(i64),
     Boolean(bool),
     Id(String),

@@ -1,0 +1,7 @@
+(let ((point1 (array 1 2)) (point2 (array 3 4)) (result (array )))
+    (block
+        (print (+ (getIndex point1 0) (getIndex point2 0)))
+        (set! result (append result (+ (getIndex point1 0) (getIndex point2 0))))
+        (print result)
+    )
+)

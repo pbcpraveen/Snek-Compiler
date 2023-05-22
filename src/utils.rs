@@ -59,6 +59,7 @@ pub fn instr_to_str(i: &Instr) -> String {
         Instr::IJz(l) => format!("jz {}", l),
         Instr::ICmove(d, s) => format!("cmove {}, {}", val_to_str(d), val_to_str(s)),
         Instr::ICmovne(d, s) => format!("cmovne {}, {}", val_to_str(d), val_to_str(s)),
+        Instr::ICmovg(d, s) => format!("cmovg {}, {}", val_to_str(d), val_to_str(s)),
         Instr::INot(d) => format!("not {}", val_to_str(d)),
         Instr::ISal(d, s) => format!("sal {}, {}", val_to_str(d), val_to_str(s)),
         Instr::IShr(d, s) => format!("shr {}, {}", val_to_str(d), val_to_str(s)),

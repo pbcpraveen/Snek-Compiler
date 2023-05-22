@@ -1,0 +1,26 @@
+(fun (add_points point1 point2)
+    (let (
+            (p1 (len point1))
+            (p2 (len point2))
+         )
+
+         (if (= p1 p2)
+             (let ((result (array )) (i 0))
+                  (loop
+                        (if (= p1 0)
+                            (break result)
+                            (block
+                                (set! result (append result (+ (getIndex point1 i) (getIndex point2 i))))
+                                (set! i (+ i 1))
+                                (set! p1 (- p1 1))
+                            )
+                        )
+                  )
+             )
+             point1
+         )
+    )
+)
+(let ((point1 (array 1 2)) (point2 (array 4 5)))
+    (print (add_points point1 point2))
+)

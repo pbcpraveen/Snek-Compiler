@@ -29,6 +29,7 @@ pub extern "C" fn snek_error(errcode: i64) {
 fn parse_input(input: &str) -> i64 {
 
     match input {
+        "null" => 1,
         "true" => 7,
         "false" => 3,
         _ => {
@@ -62,7 +63,7 @@ fn snek_str(val : i64, seen : &mut Vec<i64>) -> String {
     if val == 7 { "true".to_string() }
     else if val == 3 { "false".to_string() }
     else if val % 2 == 0 { format!("{}", val >> 1) }
-    else if val == 1 { "nil".to_string() }
+    else if val == 1 { "null".to_string() }
     else if val & 1 == 1 {
         if seen.contains(&val)  { return "[...]".to_string() }
         seen.push(val);
