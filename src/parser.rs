@@ -23,6 +23,7 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                 [Sexp::Atom(S(op)), e] if op == "isbool" => Expr::UnOp(Op1::IsBool, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e] if op == "print" => Expr::UnOp(Op1::Print, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e] if op == "isnull" => Expr::UnOp(Op1::IsNull, Box::new(parse_expr(e))),
+                [Sexp::Atom(S(op)), e] if op == "len" => Expr::UnOp(Op1::Len, Box::new(parse_expr(e))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "+" => Expr::BinOp(Op2::Plus, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "-" => Expr::BinOp(Op2::Minus, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "*" => Expr::BinOp(Op2::Times, Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
@@ -51,7 +52,6 @@ pub fn parse_expr(s: &Sexp) -> Expr {
                 },
                 [Sexp::Atom(S(op)), e1, e2] if op == "getIndex" => Expr::GetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(op)), e1, e2, e3] if op == "setIndex" => Expr::SetIndex(Box::new(parse_expr(e1)), Box::new(parse_expr(e2)), Box::new(parse_expr(e3))),
-                [Sexp::Atom(S(op)), e1] if op == "len" => Expr::Len(Box::new(parse_expr(e1))),
                 [Sexp::Atom(S(op)), e1, e2] if op == "append" => Expr::Append(Box::new(parse_expr(e1)), Box::new(parse_expr(e2))),
                 [Sexp::Atom(S(id)), args@..] => {
                     let mut args_vec = Vec::new();

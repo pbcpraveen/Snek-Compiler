@@ -1,0 +1,6 @@
+(let ((a (array 1 2 3 5 7 11)))
+    (block
+        (print (getIndex a 3))
+        (print (getIndex a false))
+    )
+)

@@ -20,7 +20,8 @@ pub extern "C" fn snek_error(errcode: i64) {
         1 => eprintln!("runtime error: invalid argument to a binary operation"),
         2 => eprintln!("runtime error: invalid - memory overflow during allocation"),
         3 => eprintln!("runtime error: invalid - index out of bounds"),
-        4 => eprintln!("runtime error: invalid - expected an array to index into"),
+        4 => eprintln!("runtime error: invalid - expected an array"),
+        5 => eprintln!("runtime error: invalid - expected number for index"),
         _ => eprintln!("runtime error: invalid - unknown error code {errcode}"),
     }
     std::process::exit(1);

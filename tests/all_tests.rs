@@ -3,6 +3,11 @@ mod infra;
 // Your tests go here!
 success_tests! {
     {
+        name: egg_eater_bst,
+        file: "bst.snek",
+        expected: "true\nfalse\n[Array: 7, [Array: 5, [Array: 2, [Array: 1, null, null], null], null], [Array: 15, [Array: 9, null, null], [Array: 20, null, null]]]\n[Array: 7, [Array: 5, [Array: 2, [Array: 1, null, null], null], null], [Array: 15, [Array: 9, null, [Array: 10, null, null]], [Array: 20, null, null]]]\n[Array: 7, [Array: 5, [Array: 2, [Array: 1, null, null], null], null], [Array: 15, [Array: 9, null, [Array: 10, null, null]], [Array: 20, null, null]]]",
+    },
+    {
         name: egg_eater_array_set_value,
         file: "set_array_index.snek",
         expected: "[Array: 2, 4, 5]\n[Array: 1, 4, 5]\n[Array: 1, 4, 5]",
@@ -86,7 +91,7 @@ success_tests! {
     {
         name: egg_eater_append_array,
         file: "append_array.snek",
-        expected: "[Array: 6762, 3279, 25]\n[Array: 6762, 3279, 25, 69]\n[Array: 6762, 3279, 25, 69]",
+        expected: "[Array: 6762, 3279, 25]\n[Array: 6762, 3279, 25, 69]\n[Array: 6762, 3279, 25, 69, [Array: 1, 2, 3]]\n[Array: 6762, 3279, 25, 69, [Array: 1, 2, 3]]",
    },
     {
         name: egg_eater_print_array,
@@ -101,6 +106,12 @@ success_tests! {
     },
     {
         name: egg_eater_get_index_2,
+        file: "simple_examples.snek",
+         input: "2",
+        expected: "44\n[Array: -1, null]\nnull\nnull",
+    },
+    {
+        name: egg_eater_get_index_3,
         file: "get_index_value.snek",
          input: "2",
         expected: "[Array: 77, 88]\n[Array: 77, 88]",
@@ -485,12 +496,28 @@ runtime_error_tests! {
         expected: "invalid",
     },
     {
+        name: egg_eater_error_tag,
+        file: "error_tag.snek",
+        input: "false",
+        expected: "invalid",
+    },
+    {
         name: egg_eater_index_not_an_array,
         file: "nested_index.snek",
         input: "1",
         expected: "invalid",
     },
-
+    {
+        name: egg_eater_index_not_number,
+        file: "error3.snek",
+        expected: "invalid",
+    },
+    {
+        name: egg_eater_index_out_of_bound,
+        file: "error_bound.snek",
+        input: "true",
+        expected: "invalid",
+    },
 }
 
 static_error_tests! {

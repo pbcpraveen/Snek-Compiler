@@ -15,6 +15,7 @@ pub const ERROR_INVALID_ARGUMENT : i64 = 1;
 pub const ERROR_OVERFLOW : i64 = 2;
 pub const ERROR_INDEX_OUT_OF_BOUNDS : i64 = 3;
 pub const ERROR_NOT_AN_ARRAY : i64 = 4;
+pub const ERROR_INDEX_NOT_NUMBER : i64 = 5;
 
 pub const ROUTINE_PRINT : &str = "snek_print";
 pub const ROUTINE_ERROR : &str = "throw_error";
@@ -116,6 +117,7 @@ pub enum Op1 {
     IsBool,
     Print,
     IsNull,
+    Len,
 }
 
 #[derive(Debug)]
@@ -152,5 +154,4 @@ pub enum Expr {
     GetIndex(Box<Expr>, Box<Expr>),
     SetIndex(Box<Expr>, Box<Expr>, Box<Expr>),
     Append(Box<Expr>, Box<Expr>),
-    Len(Box<Expr>),
 }

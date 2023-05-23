@@ -1,0 +1,7 @@
+(let ((a (array true true false null))
+      (index (if input 4 2)))
+     (block
+        (setIndex a index 4)
+        (print a)
+     )
+)

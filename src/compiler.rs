@@ -124,9 +124,6 @@ fn compile_to_instrs(expression: &Expr, context: &Context, label_count: &mut i32
         Expr::SetIndex(id, e1, e2) => {
             compile_set_index_instruction(id, e1, e2, context, label_count)
         },
-        Expr::Len(id) => {
-            compile_len_instruction(id, context, label_count)
-        },
         Expr::Append(id, e) => {
             compile_append_instruction(id, e, context, label_count)
         },
@@ -238,24 +235,32 @@ fn compile_unary_operation(op: &Op1,
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_OVERFLOW)));
             instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(VALUE_1)));
             instrs.push(Instr::IJo(ROUTINE_ERROR.to_string()));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
         },
         Op1::Sub1 => {
             instrs.extend(check_dtype_num_single(&Val::VReg(Reg::RAX)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_OVERFLOW)));
             instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(VALUE_1)));
             instrs.push(Instr::IJo(ROUTINE_ERROR.to_string()));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
         },
         Op1::IsBool => {
             instrs.push(Instr::ITest(Val::VReg(Reg::RAX), Val::VImm(1)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(TRUE)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(FALSE)));
             instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
         },
         Op1::IsNum => {
             instrs.push(Instr::ITest(Val::VReg(Reg::RAX), Val::VImm(1)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(FALSE)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
             instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
         },
         Op1::Print => {
             let offset;
@@ -270,16 +275,29 @@ fn compile_unary_operation(op: &Op1,
             instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VReg(Reg::RAX)));
             instrs.push(Instr::ICall(ROUTINE_PRINT.to_string()));
             instrs.push(Instr::IAdd(Val::VReg(Reg::RSP), Val::VImm(offset)));
-            instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VStack(context.si)))
+            instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VStack(context.si)));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
         },
         Op1::IsNull => {
             instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(NULL)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(FALSE)));
             instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(TRUE)));
             instrs.push(Instr::ICmove(Val::VReg(Reg::RAX), Val::VReg(Reg::RBX)));
+            instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
+
+        },
+        Op1::Len => {
+            instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
+            instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
+            instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
+            instrs.push(Instr::IJne("throw_error".to_string()));
+
+            instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
+            instrs.extend(mov_target(&context.target, &Val::VAddr(Reg::RAX)));
         },
     }
-    instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));
     instrs
 }
 
@@ -608,14 +626,19 @@ fn compile_get_index_instruction(array: &Box<Expr>,
     instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
     instrs.push(Instr::IJne("throw_error".to_string()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(NULL)));
+    instrs.push(Instr::IJe("throw_error".to_string()));
 
     instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
     instrs.extend(index_instrs);
+    instrs.extend(check_dtype_index(&Val::VReg(Reg::RAX)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
     instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VAddr(Reg::RCX)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INDEX_OUT_OF_BOUNDS)));
     instrs.push(Instr::IJge("throw_error".to_string()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(0)));
+    instrs.push(Instr::IJl("throw_error".to_string()));
     instrs.push(Instr::ISar(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.push(Instr::IMul(Val::VReg(Reg::RAX), Val::VImm(OFFSET_SCALE)));
@@ -642,40 +665,28 @@ fn compile_set_index_instruction(array: &Box<Expr>,
     instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
     instrs.push(Instr::IJne("throw_error".to_string()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(NULL)));
+    instrs.push(Instr::IJe("throw_error".to_string()));
 
     instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
     instrs.extend(index_instrs);
+    instrs.extend(check_dtype_index(&Val::VReg(Reg::RAX)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si)));
     instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VAddr(Reg::RCX)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INDEX_OUT_OF_BOUNDS)));
     instrs.push(Instr::IJge("throw_error".to_string()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(0)));
+    instrs.push(Instr::IJl("throw_error".to_string()));
     instrs.push(Instr::ISar(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.push(Instr::IAdd(Val::VReg(Reg::RAX), Val::VImm(1)));
     instrs.push(Instr::IMul(Val::VReg(Reg::RAX), Val::VImm(OFFSET_SCALE)));
     instrs.push(Instr::IAdd(Val::VReg(Reg::RCX), Val::VReg(Reg::RAX)));
+    instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RCX)));
     instrs.extend(value_instrs);
+    instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &Val::VStack(context.si) ));
     instrs.extend(mov_target(&Loc::LAddr(Reg::RCX), &Val::VReg(Reg::RAX)));
     instrs
-}
-
-fn compile_len_instruction(array: &Box<Expr>,
-                           context: &Context,
-                           label_count: &mut i32) -> Vec<Instr> {
-    let mut instrs = vec![];
-    let array_instrs = compile_to_instrs(array, &Context { target: Loc::LReg(Reg::RAX), ..*context }, label_count);
-    instrs.extend(array_instrs);
-
-    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
-    instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
-    instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
-    instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
-    instrs.push(Instr::IJne("throw_error".to_string()));
-
-    instrs.push(Instr::ISub(Val::VReg(Reg::RAX), Val::VImm(1)));
-    instrs.extend(mov_target(&context.target, &Val::VAddr(Reg::RAX)));
-
-    return instrs;
 }
 
 fn compile_append_instruction(array: &Box<Expr>,
@@ -689,11 +700,14 @@ fn compile_append_instruction(array: &Box<Expr>,
     let copy_label_end = new_label(label_count, "copy_end", context.current_function);
     instrs.extend(array_instrs);
 
+
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VReg(Reg::RAX)));
     instrs.push(Instr::IAnd(Val::VReg(Reg::RBX), Val::VImm(3)));
     instrs.push(Instr::ICmp(Val::VReg(Reg::RBX), Val::VImm(1)));
     instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY)));
     instrs.push(Instr::IJne("throw_error".to_string()));
+    instrs.push(Instr::ICmp(Val::VReg(Reg::RAX), Val::VImm(NULL)));
+    instrs.push(Instr::IJe("throw_error".to_string()));
 
     instrs.extend(mov_target(&Loc::LStack(context.si), &Val::VReg(Reg::RAX)));
     instrs.extend(value_instrs);

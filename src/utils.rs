@@ -33,6 +33,13 @@ pub fn check_dtype_num_single(operand1: &Val) -> Vec<Instr> {
   instrs
 }
 
+pub fn check_dtype_index(operand1: &Val) -> Vec<Instr> {
+  let mut instrs = Vec::new();
+  instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INDEX_NOT_NUMBER)));
+  instrs.push(Instr::ITest(operand1.clone(), Val::VImm(1)));
+  instrs.push(Instr::IJne("throw_error".to_string()));
+  instrs
+}
 
 pub fn instr_to_str(i: &Instr) -> String {
     match i {

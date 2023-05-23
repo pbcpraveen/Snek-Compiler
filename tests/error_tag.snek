@@ -1,0 +1,7 @@
+(let ((a (if input
+                (array 1 2 3)
+                false
+         )
+      ))
+      (print (getIndex a 1))
+)

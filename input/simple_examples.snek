@@ -1,0 +1,8 @@
+(let
+    ((a (array 44 true (array -1 null))))
+    (block
+        (print (getIndex a 0))
+        (print (getIndex a 2))
+        (print (getIndex (getIndex a 2) 1))
+    )
+)
