@@ -3,7 +3,7 @@ use crate::utils::*;
 
 use im::HashMap;
 use im::HashSet;
-
+use crate::constants::Reg::RBX;
 
 
 pub fn compile_program(prog: &Program) -> Vec<Instr> {
@@ -441,6 +441,23 @@ fn compile_binary_operation(op: &Op2,
             instrs.push(Instr::ILabel(jump_label));
             instrs.extend(mov_target(&Loc::LReg(Reg::RAX), &Val::VImm(TRUE)));
             instrs.push(Instr::ILabel(end_label));
+        }
+        Op2::StructureEqual => {
+            let mut offset= context.si;
+            if offset % 2 == 0{
+                offset = (offset + 1) * OFFSET_SCALE;
+            } else {
+                offset = (offset) * OFFSET_SCALE;
+            }
+            instrs.extend(check_dtype_struct(&Val::VReg(Reg::RAX), &Val::VStack(stack_offset)));
+            instrs.extend(mov_target(&Loc::LStack(context.si + 1), &Val::VReg(Reg::RDI)));
+            instrs.extend(mov_target(&Loc::LReg(RBX), &Val::VStack(stack_offset)));
+            instrs.push(Instr::ISub(Val::VReg(Reg::RSP), Val::VImm(offset)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VReg(Reg::RAX)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RSI), &Val::VReg(Reg::RBX)));
+            instrs.push(Instr::ICall(ROUTINE_STRUCTURAL_EQUALITY.to_string()));
+            instrs.push(Instr::IAdd(Val::VReg(Reg::RSP), Val::VImm(offset)));
+            instrs.extend(mov_target(&Loc::LReg(Reg::RDI), &Val::VStack(context.si + 1)));
         }
     }
     instrs.extend(mov_target(&context.target, &Val::VReg(Reg::RAX)));

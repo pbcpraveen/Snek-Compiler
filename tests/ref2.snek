@@ -1,0 +1,8 @@
+(let ((a (array true false null 3)) (b a))
+    (block
+        (setIndex a 2 a)
+        (print a)
+        (print b)
+        (print (= a b))
+    )
+)

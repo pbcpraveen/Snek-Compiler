@@ -1,0 +1,7 @@
+(let ((a (array 66 72 12 3)) (b (array 66 72 12 a)))
+    (block
+        (setIndex a 3 b)
+        (print (= a b))
+        (print (== a b))
+    )
+)

@@ -1,0 +1,10 @@
+(let ((a (array null 3 4 5 null)) (b (array null 6 7 8 9)))
+    (block
+        (print a)
+        (print b)
+        (setIndex a 4 b)
+        (setIndex b 4 a)
+        (print a)
+        (print b)
+    )
+)

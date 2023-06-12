@@ -16,8 +16,10 @@ pub const ERROR_OVERFLOW : i64 = 2;
 pub const ERROR_INDEX_OUT_OF_BOUNDS : i64 = 3;
 pub const ERROR_NOT_AN_ARRAY : i64 = 4;
 pub const ERROR_INDEX_NOT_NUMBER : i64 = 5;
+pub const ERROR_NOT_AN_ARRAY_COMPARISON : i64 = 6;
 
 pub const ROUTINE_PRINT : &str = "snek_print";
+pub const ROUTINE_STRUCTURAL_EQUALITY : &str = "snek_structural_equality";
 pub const ROUTINE_ERROR : &str = "throw_error";
 
 #[derive(Debug)]
@@ -53,6 +55,7 @@ pub enum Reg {
     RCX,
     RDX,
     R15,
+    RSI,
 }
 
 #[derive(Clone,Copy,Debug)]
@@ -132,6 +135,7 @@ pub enum Op2 {
     LessEqual,
     And,
     Or,
+    StructureEqual,
 }
 
 

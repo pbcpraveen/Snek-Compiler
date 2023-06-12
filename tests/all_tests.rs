@@ -447,7 +447,24 @@ success_tests! {
         name: dimondback_fun_many_args,
         file: "fun_many_args.snek",
         expected: "2432902008176640000\n2432902008176640000",
-    }
+    },
+
+    {
+        name: green_snake_ref1,
+        file: "ref1.snek",
+        expected: "true\nfalse\nfalse",
+    },
+
+     {
+        name: green_snake_ref2,
+        file: "ref2.snek",
+        expected: "[Array: true, false, [...], 3]\n[Array: true, false, [...], 3]\ntrue\ntrue",
+    },
+     {
+        name: green_snake_ref3,
+        file: "ref3.snek",
+        expected: "true\ntrue\nfalse\nfalse\ntrue\ntrue",
+    },
 }
 
 runtime_error_tests! {

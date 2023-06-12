@@ -1,0 +1,11 @@
+(let ((a (array 1 2 3)) (b a) (c b))
+    (block
+        (print (= a b))
+        (print (= a c))
+        (set! a (append a (array 4 5 6)))
+        (print (= a b))
+        (print (= a c))
+        (set! c a)
+        (print (= a c))
+    )
+)

@@ -1,0 +1,9 @@
+(let
+    ( (a (array true null 4)) (b (array true null)) )
+    (block
+        (print (== a b))
+        (set! b (append b 4))
+        (print (= a b))
+        (print (== a b))
+    )
+)

@@ -25,6 +25,23 @@ pub fn check_dtype_num(operand1: &Val, operand2: &Val) -> Vec<Instr> {
       instrs
 }
 
+pub fn check_dtype_struct(operand1: &Val, operand2: &Val) -> Vec<Instr> {
+  let mut instrs = Vec::new();
+      instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_NOT_AN_ARRAY_COMPARISON)));
+      instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &operand1.clone()));
+      instrs.push(Instr::IAnd(Val::VReg(Reg::RCX), Val::VImm(3)));
+      instrs.push(Instr::ICmp(Val::VReg(Reg::RCX), Val::VImm(1)));
+      instrs.push(Instr::IJne("throw_error".to_string()));
+      instrs.extend(mov_target(&Loc::LReg(Reg::RCX), &operand2.clone()));
+      instrs.push(Instr::IAnd(Val::VReg(Reg::RCX), Val::VImm(3)));
+      instrs.push(Instr::ICmp(Val::VReg(Reg::RCX), Val::VImm(1)));
+      instrs.push(Instr::IJne("throw_error".to_string()));
+
+      instrs
+}
+
+
+
 pub fn check_dtype_num_single(operand1: &Val) -> Vec<Instr> {
   let mut instrs = Vec::new();
   instrs.extend(mov_target(&Loc::LReg(Reg::RBX), &Val::VImm(ERROR_INVALID_ARGUMENT)));
@@ -168,6 +185,7 @@ fn reg_to_str(r: &Reg) -> String {
         Reg::RCX => "rcx".to_string(),
         Reg::RDX => "rdx".to_string(),
         Reg::R15 => "r15".to_string(),
+        Reg::RSI => "rsi".to_string(),
     }
 }
 pub fn is_def(s: &Sexp) -> bool {

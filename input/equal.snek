@@ -1,0 +1,12 @@
+(let ((a (array 1 2 3 4)))
+    (let ((b a) (c (array 1 2 3 4)) (d (array 1 2 3 4 5)))
+        (block
+            (print (= a b))
+            (print (== a b))
+            (print (= a c))
+            (print (== a c))
+            (print (= a d))
+            (print (== a d))
+        )
+    )
+)
