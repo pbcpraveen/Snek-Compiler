@@ -1,0 +1,17 @@
+(let
+    ((a (array 1 32)) (b (array 3 a)) (c (array a b)))
+    (block
+        (setIndex a 0 b)
+        (setIndex a 1 c)
+        (setIndex b 0 c)
+        (print a)
+        (print b)
+        (print c)
+        (print (= a b))
+        (print (= a c))
+        (print (= b c))
+        (print (== a b))
+        (print (== a c))
+        (print (== b c))
+    )
+)
